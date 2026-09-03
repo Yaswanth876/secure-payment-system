@@ -1,6 +1,12 @@
+import { useState } from 'react';
+
 export default function RecipientCard({ recipient, selected = false, onClick }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const initials = recipient.name?.split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase() || '?';
+  const hasPhoto = Boolean(recipient.photo) && !imageFailed;
+
   return <button className={`recipient-card ${selected ? 'selected' : ''}`} onClick={onClick} aria-pressed={selected}>
-    <span className="avatar">{recipient.photo ? <img src={recipient.photo} alt={`${recipient.name}, the person you're paying`} onError={event => { event.currentTarget.hidden = true; }} /> : recipient.name?.slice(0, 1).toUpperCase()}</span>
+    <span className="avatar">{hasPhoto ? <img src={recipient.photo} alt={`Photo of ${recipient.name}`} onError={() => setImageFailed(true)} /> : <span role="img" aria-label={`${recipient.name} initials`}>{initials}</span>}</span>
     <span className="recipient-copy"><strong>{recipient.name}</strong><span>{recipient.upiId}</span><small>{recipient.bankName || 'Bank details unavailable'} {recipient.maskedAccountNumber || ''}</small></span>
     {recipient.isNew && <span className="tag">NEW RECIPIENT</span>}
   </button>;

@@ -17,6 +17,7 @@ export async function apiRequest(path, options = {}) {
 
 export const getProfile = userId => apiRequest(`/api/users/${userId}/profile`);
 export const getRecipients = userId => apiRequest(`/api/users/${userId}/recipients`);
+export const getRecipient = recipientId => apiRequest(`/api/recipients/${recipientId}`);
 export const searchRecipients = query => apiRequest(`/api/recipients/search?query=${encodeURIComponent(query)}`);
 export const getTransactions = userId => apiRequest(`/api/users/${userId}/transactions`);
 export const getTransaction = transactionId => apiRequest(`/api/transactions/${transactionId}`);

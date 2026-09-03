@@ -62,6 +62,17 @@ p { color: #000; line-height: 1.5; }
 .transaction-copy span, .recipient-copy span, .recipient-copy small { color: #000; font: 13px Arial, sans-serif; }
 .recipient-copy small { margin-top: 5px; }
 .transaction-amount { font-size: 17px; white-space: nowrap; }
+.recipient-identity-card { display: grid; grid-template-columns: 112px 1fr; gap: 24px; align-items: center; margin: 0 0 42px; padding: 24px; border: 1px solid #000; border-radius: 22px; background: #fff; }
+.identity-photo-wrap { display: grid; place-items: center; width: 112px; height: 112px; overflow: hidden; border: 2px solid #000; border-radius: 50%; background: #000; }
+.identity-photo { width: 100%; height: 100%; object-fit: cover; }
+.identity-initials { color: #fff; font: 600 30px 'Space Grotesk', sans-serif; letter-spacing: .04em; }
+.identity-content { min-width: 0; }
+.identity-content h2 { margin: 8px 0 5px; font-size: 28px; overflow-wrap: anywhere; }
+.identity-upi { margin: 0 0 17px; color: #000; font: 14px Arial, sans-serif; overflow-wrap: anywhere; }
+.identity-bank { display: flex; flex-wrap: wrap; gap: 7px 18px; align-items: baseline; margin-bottom: 16px; font: 13px Arial, sans-serif; overflow-wrap: anywhere; }
+.identity-bank strong { font-weight: 700; }
+.identity-tag { display: inline-flex; }
+.identity-note { max-width: 390px; margin: 15px 0 0; font: 12px Arial, sans-serif; line-height: 1.45; }
 .principle { display: flex; gap: 18px; margin-top: 64px; padding-top: 20px; border-top: 1px solid #000; }
 .principle-number { font: 12px Arial, sans-serif; color: #000; }
 .principle strong { font-size: 18px; }
@@ -167,5 +178,6 @@ p { color: #000; line-height: 1.5; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: .45; transform: scale(.93); } }
 @media (max-width: 600px) { .topbar { padding: 0 18px; } .brand { font-size: 16px; } .connection { font-size: 10px; } .main-content { padding: 38px 18px; } .hero-action { align-items: stretch; flex-direction: column; margin: 30px 0 45px; padding: 24px; } .primary-button { width: 100%; } .bottom-nav { right: 10px; bottom: 10px; left: 10px; gap: 25px; } .tag { font-size: 9px; } .receipt { padding: 0 18px; } }
+@media (max-width: 600px) { .recipient-identity-card { grid-template-columns: 1fr; gap: 17px; padding: 20px; text-align: center; } .identity-photo-wrap { width: 88px; height: 88px; margin: auto; } .identity-content h2 { font-size: 25px; } .identity-bank { justify-content: center; } .identity-note { margin-right: auto; margin-left: auto; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 @media (max-width: 600px) { .amount-mismatch-values { grid-template-columns: 1fr; } }
