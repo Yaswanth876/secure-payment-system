@@ -51,16 +51,23 @@ export async function previewPayment(database, input) {
   return receipt(transaction, safety);
 }
 
-export async function authorizePayment(database, transactionId, confirmation) {
-  const transaction = await findTransaction(database, transactionId);
+export async function authorizePayment(database, transactionId, confirmation, requestedAmount) {
+  let transaction = await findTransaction(database, transactionId);
   if (transaction.status !== 'CREATED') return { ...transaction, alreadyProcessed: true };
   if (confirmation?.recipientConfirmed !== true || confirmation?.amountConfirmed !== true) throw badRequest('INVALID_CONFIRMATION', 'Explicit recipient and amount confirmation are required.');
+  if (requestedAmount !== undefined) {
+    const amount = Number(requestedAmount);
+    if (!Number.isSafeInteger(amount) || amount <= 0) throw badRequest('INVALID_AMOUNT', 'amount must be a positive integer in paise.');
+    await run(database, 'UPDATE transactions SET amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [amount, transactionId]);
+    transaction = { ...transaction, amount };
+  }
   const safety = await evaluateTransaction(database, transaction);
   if (safety.continuityLock) {
     await run(database, 'UPDATE transactions SET safety_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', ['LOCKED', transactionId]);
     await recordSafety(database, transactionId, 'CONTINUITY_LOCK', 'A matching payment must be resolved before another payment is authorized.', { existingTransactionId: safety.continuityLock.id, existingStatus: safety.continuityLock.status, amount: transaction.amount, recipientId: transaction.recipientId });
     throw new AppError(409, 'CONTINUITY_LOCK', 'A previous payment with the same recipient and amount is still unresolved.', { existingTransactionId: safety.continuityLock.id, existingStatus: safety.continuityLock.status, canRetry: false });
   }
+  await run(database, 'UPDATE transactions SET safety_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [safety.status, transactionId]);
   await recordSafety(database, transactionId, 'USER_CONFIRMED', 'The user confirmed the recipient and amount.');
   await transition(database, transactionId, 'CREATED', 'AUTHORIZED');
   await recordSafety(database, transactionId, 'PAYMENT_AUTHORIZED', 'Payment authorization was accepted by the backend.');

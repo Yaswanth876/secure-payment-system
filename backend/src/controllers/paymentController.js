@@ -4,7 +4,7 @@ import { success } from '../utils/responses.js';
 import { id } from '../utils/validation.js';
 
 export async function preview(request, response) { return success(response, await previewPayment(request.app.locals.database, request.body), 201); }
-export async function authorize(request, response) { return success(response, await authorizePayment(request.app.locals.database, request.params.transactionId, request.body.confirmation)); }
+export async function authorize(request, response) { return success(response, await authorizePayment(request.app.locals.database, request.params.transactionId, request.body.confirmation, request.body.amount)); }
 export async function status(request, response) {
   const data = await getTransaction(request.app.locals.database, request.params.transactionId);
   return success(response, { ...data, canRetry: ['FAILED'].includes(data.status), message: ['PROCESSING', 'PENDING', 'UNKNOWN'].includes(data.status) ? 'Payment is still being processed. Do not pay again.' : undefined });
