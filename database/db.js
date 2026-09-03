@@ -8,11 +8,13 @@ const databasePath = path.join(databaseDirectory, 'payment_guardian.db');
 const migrationPath = path.join(databaseDirectory, 'migrations', '001_initial_schema.sql');
 const seedPath = path.join(databaseDirectory, 'seeds', '001_demo_data.sql');
 
-function openDatabase() {
+export function openDatabase() {
   const database = new sqlite3.Database(databasePath);
   database.exec('PRAGMA foreign_keys = ON;');
   return database;
 }
+
+export { databasePath };
 
 function run(database, sql, parameters = []) {
   return new Promise((resolve, reject) => {
@@ -60,7 +62,14 @@ async function setupDatabase() {
 }
 
 async function resetDatabase() {
-  await fs.rm(databasePath, { force: true });
+  try {
+    await fs.rm(databasePath, { force: true });
+  } catch (error) {
+    if (error.code !== 'EBUSY') throw error;
+    const database = openDatabase();
+    await exec(database, 'DROP TABLE IF EXISTS safety_events; DROP TABLE IF EXISTS transactions; DROP TABLE IF EXISTS trusted_contacts; DROP TABLE IF EXISTS recipients; DROP TABLE IF EXISTS accounts; DROP TABLE IF EXISTS users;');
+    await close(database);
+  }
   await setupDatabase();
 }
 
@@ -112,10 +121,14 @@ async function testDatabase() {
   console.log('Database tests passed.');
 }
 
-const command = process.argv[2] || 'setup';
-if (command === 'migrate') await (async () => { const database = openDatabase(); await applyMigration(database); await close(database); })();
-else if (command === 'seed') await (async () => { const database = openDatabase(); await seedDatabase(database); await close(database); })();
-else if (command === 'setup') await setupDatabase();
-else if (command === 'reset') await resetDatabase();
-else if (command === 'test') await testDatabase();
-else throw new Error(`Unknown database command: ${command}`);
+export { all, close, exec, run };
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const command = process.argv[2] || 'setup';
+  if (command === 'migrate') await (async () => { const database = openDatabase(); await applyMigration(database); await close(database); })();
+  else if (command === 'seed') await (async () => { const database = openDatabase(); await seedDatabase(database); await close(database); })();
+  else if (command === 'setup') await setupDatabase();
+  else if (command === 'reset') await resetDatabase();
+  else if (command === 'test') await testDatabase();
+  else throw new Error(`Unknown database command: ${command}`);
+}

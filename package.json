@@ -10,7 +10,8 @@
     "db:seed": "node database/db.js seed",
     "db:setup": "node database/db.js setup",
     "db:reset": "node database/db.js reset",
-    "db:test": "node database/db.js test"
+    "db:test": "node database/db.js test",
+    "test:backend": "npm run db:reset && node --test backend/tests/backend.test.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
