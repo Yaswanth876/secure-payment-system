@@ -60,7 +60,7 @@ The state machine permits only `CREATED -> AUTHORIZED -> PROCESSING`, then `SUCC
 
 ### Continuity Lock
 
-Before authorization, the backend searches for matching sender, recipient, and paise amount in `PROCESSING`, `PENDING`, or `UNKNOWN` states. A match blocks authorization with `CONTINUITY_LOCK`, records a `CONTINUITY_LOCK` safety event, and returns `canRetry: false`. A matching successful payment is also reported as an informative duplicate warning and is not silently authorized. Failed payments do not block a new preview/retry.
+Before authorization, the backend searches for matching sender, recipient, and paise amount in `PROCESSING`, `PENDING`, or `UNKNOWN` states. A match blocks authorization with `CONTINUITY_LOCK`, records a `CONTINUITY_LOCK` safety event, and returns `canRetry: false`. A matching successful payment is reported as an informative duplicate warning and requires the user to review and explicitly confirm again; it is not silently rejected or treated as an unresolved lock. Failed payments do not block a new preview/retry.
 
 ## Error codes
 

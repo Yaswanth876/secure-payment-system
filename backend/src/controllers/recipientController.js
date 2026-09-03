@@ -14,6 +14,8 @@ export async function getRecipient(request, response) {
 
 export async function listRecipients(request, response) {
   const userId = id(request.params.userId, 'userId');
+  const users = await all(request.app.locals.database, 'SELECT id FROM users WHERE id = ?', [userId]);
+  if (!users[0]) throw notFound('USER_NOT_FOUND', 'User was not found.');
   const rows = await all(request.app.locals.database, `SELECT ${recipientFields} FROM recipients WHERE user_id = ? ORDER BY name`, [userId]);
   return success(response, rows);
 }
