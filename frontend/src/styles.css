@@ -112,6 +112,27 @@ p { color: #000; line-height: 1.5; }
 .inline-error { margin: -24px 0 24px; color: #8a2020; font: 13px Arial, sans-serif; }
 .field-note { margin: 13px 0 40px; font: 12px Arial, sans-serif; }
 .receipt { padding: 0 24px; border: 1px solid #000; border-radius: 22px; background: #fff; }
+.pre-payment-receipt { max-width: 760px; }
+.receipt-block { border: 1px solid #000; border-radius: 22px; background: #fff; }
+.receipt-block .receipt-section { padding: 26px; }
+.receipt-who .recipient-identity-card { margin: 18px 0 0; padding: 20px; border-color: #000; box-shadow: none; }
+.receipt-who .identity-note { display: none; }
+.receipt-amount strong { display: block; margin-top: 14px; font: 400 clamp(56px, 12vw, 92px) 'Space Grotesk', sans-serif; letter-spacing: -.05em; }
+.receipt-paisee { display: block; margin-top: 8px; font: 11px Arial, sans-serif; }
+.receipt-from h2 { margin: 14px 0 5px; }
+.receipt-from p { margin: 4px 0; font: 13px Arial, sans-serif; }
+.receipt-from strong { font-weight: 700; }
+.receipt-safety { margin: 24px 0; padding: 22px; border: 1px solid #000; border-radius: 18px; background: #fff; }
+.receipt-safety > .eyebrow { margin-bottom: 16px; }
+.receipt-safety-item { display: flex; gap: 12px; padding: 13px 0; border-top: 1px solid #000; }
+.safety-mark { display: grid; place-items: center; flex: 0 0 22px; width: 22px; height: 22px; border: 1px solid #000; border-radius: 50%; font: 12px Arial, sans-serif; }
+.receipt-safety-item strong { font: 13px Arial, sans-serif; text-transform: uppercase; letter-spacing: .07em; }
+.receipt-safety-item p { margin: 5px 0 0; font: 13px Arial, sans-serif; }
+.receipt-error { margin: 18px 0; padding: 14px 16px; border: 1px solid #000; font: 13px Arial, sans-serif; }
+.receipt-blocked-actions { display: grid; gap: 14px; text-align: center; }
+.receipt-blocked-actions > strong { font: 13px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.ui-button-outline { background: #fff; color: #000; }
+.ui-button-outline:hover { background: #000; color: #fff; }
 .receipt-section { padding: 24px 0; border-bottom: 1px solid #000; }
 .receipt-section:last-child { border-bottom: 0; }
 .receipt-person { display: flex; gap: 15px; align-items: center; margin-top: 18px; }

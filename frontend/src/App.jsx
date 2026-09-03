@@ -5,6 +5,7 @@ import LoadingState from './components/LoadingState.jsx';
 import AmountConfirmation from './components/AmountConfirmation.jsx';
 import RecipientCard from './components/RecipientCard.jsx';
 import RecipientIdentityCard from './components/RecipientIdentityCard.jsx';
+import PrePaymentReceipt from './components/PrePaymentReceipt.jsx';
 import SafetyTimeline from './components/SafetyTimeline.jsx';
 import TransactionCard from './components/TransactionCard.jsx';
 import { Button } from './components/ui/button.jsx';
@@ -107,7 +108,7 @@ function PayFlow({ flow, profile, recipients, query, setQuery, selectedRecipient
   if (recipientLoading) return <section className="page reveal"><PageHeader title="Recipient" onBack={onBack} /><LoadingState label="Loading recipient details" /></section>;
   if (recipientError) return <section className="page reveal"><PageHeader title="Recipient" onBack={onBack} /><ErrorState message={recipientError} /><Button className="wide" onClick={onBack}>Back to recipients</Button></section>;
   if (flow === 'amount') return <section className="page reveal"><PageHeader title="Amount" onBack={onBack} /><RecipientIdentityCard recipient={selectedRecipient} /><label className="amount-field"><span>₹</span><Input autoFocus inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-label="Amount in rupees" /></label><p className="field-note">Enter the whole amount in rupees.</p>{error && <ErrorState message={error} />}{loading ? <LoadingState label="Preparing review" /> : <Button className="wide" onClick={onAmount}>Review payment <span>→</span></Button>}</section>;
-  if (flow === 'review') return <Review preview={preview} loading={loading} error={error} onBack={onBack} onSend={onSend} />;
+  if (flow === 'review') return <PrePaymentReceipt preview={preview} loading={loading} error={error} onBack={onBack} onContinue={onSend} onViewPrevious={onViewPrevious} />;
   if (flow === 'amount-confirmation') return <AmountConfirmation preview={preview} loading={loading} error={error} onBack={onBack} onConfirm={onConfirm} />;
   if (flow === 'processing') return <StatusScreen status="PROCESSING" transaction={transaction || preview} loading={loading} onRefresh={onRefresh} />;
   if (flow === 'locked') return <LockScreen lockData={lockData} preview={preview} onBack={onBack} onViewPrevious={onViewPrevious} />;
