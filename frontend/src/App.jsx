@@ -6,13 +6,9 @@ import RecipientCard from './components/RecipientCard.jsx';
 import SafetyTimeline from './components/SafetyTimeline.jsx';
 import SlideToConfirm from './components/SlideToConfirm.jsx';
 import TransactionCard from './components/TransactionCard.jsx';
-<<<<<<< HEAD
 import { Button } from './components/ui/button.jsx';
 import { Card } from './components/ui/card.jsx';
 import { Input } from './components/ui/input.jsx';
-=======
-import AmountConfirmation from './components/AmountConfirmation.jsx';
->>>>>>> 03f9d91e65a1e2951d116c3edbe483175f48c215
 
 const USER_ID = 1;
 const money = value => `₹${Number(value).toLocaleString('en-IN')}`;
@@ -101,19 +97,10 @@ function Detail({ detail, loading, onBack }) { if (loading || !detail) return <s
 function Info({ label, value }) { return <div className="info-cell"><span className="eyebrow">{label}</span><strong>{value}</strong></div>; }
 function PageHeader({ title, onBack }) { return <div className="page-header"><Button variant="ghost" className="back-button" onClick={onBack} aria-label="Go back">←</Button><h1>{title}</h1></div>; }
 
-<<<<<<< HEAD
 function PayFlow({ flow, profile, recipients, query, setQuery, selectedRecipient, amount, setAmount, preview, transaction, lockData, error, loading, onSelect, onAmount, onConfirm, onBack, onDone, onViewPrevious, onRefresh }) {
   if (flow === 'recipient') return <section className="page reveal"><PageHeader title="Pay" onBack={onBack} /><p className="page-intro">Choose who you are paying.</p><label className="search-box"><span>⌕</span><Input value={query} onChange={event => setQuery(event.target.value)} placeholder="Name or UPI ID" aria-label="Search recipients" /></label>{error && <ErrorState message={error} />}{recipients.map(recipient => <RecipientCard key={recipient.recipientId} recipient={recipient} onClick={() => onSelect(recipient)} />)}</section>;
   if (flow === 'amount') return <section className="page reveal"><PageHeader title="Amount" onBack={onBack} /><div className="pay-target"><span className="avatar">{selectedRecipient.name.slice(0, 1)}</span><div><span className="eyebrow">Paying</span><h2>{selectedRecipient.name}</h2><p>{selectedRecipient.upiId}</p></div></div><label className="amount-field"><span>₹</span><Input autoFocus inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-label="Amount in rupees" /></label><p className="field-note">Enter the whole amount in rupees.</p>{error && <ErrorState message={error} />}{loading ? <LoadingState label="Preparing review" /> : <Button className="wide" onClick={onAmount}>Review payment <span>→</span></Button>}</section>;
   if (flow === 'review') return <Review preview={preview} loading={loading} error={error} onBack={onBack} onConfirm={onConfirm} />;
-=======
-function PayFlow({ flow, profile, recipients, query, setQuery, selectedRecipient, amount, setAmount, preview, transaction, lockData, error, loading, onSelect, onAmount, onConfirm, onConfirmAmount, onBack, onDone, onViewPrevious, onRefresh }) {
-  if (flow === 'recipient') return <section className="page reveal"><PageHeader title="Pay" onBack={onBack} /><p className="page-intro">Choose who you are paying.</p><label className="search-box"><span>⌕</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Name or UPI ID" aria-label="Search recipients" /></label>{error && <ErrorState message={error} />}{recipients.map(recipient => <RecipientCard key={recipient.recipientId} recipient={recipient} onClick={() => onSelect(recipient)} />)}</section>;
-  if (flow === 'amount') return <section className="page reveal"><PageHeader title="Amount" onBack={onBack} /><div className="pay-target"><span className="avatar">{selectedRecipient.photo ? <img src={selectedRecipient.photo} alt={`${selectedRecipient.name}, the person you're paying`} onError={event => { event.currentTarget.hidden = true; }} /> : selectedRecipient.name.slice(0, 1)}</span><div><span className="eyebrow">Person you're paying</span><h2>{selectedRecipient.name}</h2><p>{selectedRecipient.upiId}</p><p>{selectedRecipient.bankName} {selectedRecipient.maskedAccountNumber || ''}</p></div></div><label className="amount-field"><span>₹</span><input autoFocus inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-label="Amount in rupees" /></label><p className="field-note">Enter the whole amount in rupees.</p>{error && <ErrorState message={error} />}{loading ? <LoadingState label="Preparing review" /> : <button className="primary-button wide" onClick={onAmount}>Review payment <span>→</span></button>}</section>;
-  if (flow === 'review') return <Review preview={preview} loading={loading} error={error} onBack={onBack} onConfirm={() => setFlow('amount-confirmation')} />;
-  if (flow === 'amount-confirmation') return <AmountConfirmation preview={preview} loading={loading} error={error} onBack={onBack} onConfirm={onConfirmAmount} />;
-  if (flow === 'review-confirmed') return <Review preview={preview} loading={loading} error={error} onBack={onBack} onConfirm={onConfirm} />;
->>>>>>> 03f9d91e65a1e2951d116c3edbe483175f48c215
   if (flow === 'processing') return <StatusScreen status="PROCESSING" transaction={transaction || preview} loading={loading} onRefresh={onRefresh} />;
   if (flow === 'locked') return <LockScreen lockData={lockData} preview={preview} onBack={onBack} onViewPrevious={onViewPrevious} />;
   return <StatusScreen status={transaction?.status} transaction={transaction} onDone={onDone} onRefresh={onRefresh} />;
