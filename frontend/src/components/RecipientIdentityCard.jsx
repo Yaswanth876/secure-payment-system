@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { recipientPhoto } from '../lib/recipientPhoto.js';
 
 export default function RecipientIdentityCard({ recipient }) {
   const [imageFailed, setImageFailed] = useState(false);
   const initials = recipient.name?.split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase() || '?';
-  const hasPhoto = Boolean(recipient.photo) && !imageFailed;
+  const photo = recipientPhoto(recipient);
+  const hasPhoto = Boolean(photo) && !imageFailed;
 
   return <article className="recipient-identity-card" aria-labelledby="recipient-identity-name">
     <div className="identity-photo-wrap">
-      {hasPhoto ? <img className="identity-photo" src={recipient.photo} alt={`Photo of ${recipient.name}`} onError={() => setImageFailed(true)} /> : <span className="identity-initials" role="img" aria-label={`${recipient.name} initials`}>{initials}</span>}
+      {hasPhoto ? <img className="identity-photo" src={photo} alt={`Photo of ${recipient.name}`} onError={() => setImageFailed(true)} /> : <span className="identity-initials" role="img" aria-label={`${recipient.name} initials`}>{initials}</span>}
     </div>
     <div className="identity-content">
       <span className="eyebrow">Recipient details</span>

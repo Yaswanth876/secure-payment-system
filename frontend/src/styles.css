@@ -97,8 +97,9 @@ p { color: #000; line-height: 1.5; }
 .amount-mismatch { margin: 24px 0; padding: 18px; border: 1px solid #999; background: #ebebe7; text-align: left; }
 .amount-mismatch h2 { margin: 8px 0; font-size: 22px; }
 .amount-mismatch p { margin-bottom: 16px; font: 13px Arial, sans-serif; }
-.amount-mismatch-values { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.amount-mismatch-values button { min-height: 76px; padding: 12px; border: 1px solid #171717; background: #fff; text-align: left; cursor: pointer; }
+.amount-mismatch-values { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0 0; }
+.amount-mismatch-values .ui-button { min-height: 76px; padding: 12px; border-color: #171717; background: #fff; color: #000; text-align: left; }
+.amount-mismatch-values .ui-button:not(.ui-button-outline) { background: #000; color: #fff; }
 .amount-mismatch-values span, .amount-mismatch-values strong { display: block; }
 .amount-mismatch-values span { margin-bottom: 6px; color: #777; font: 11px Arial, sans-serif; text-transform: uppercase; }
 .amount-mismatch-values strong { font-size: 20px; font-weight: 400; }
