@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { getHealth } from '../controllers/healthController.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
+import { health } from '../controllers/paymentController.js';
 
-const healthRoutes = Router();
-
-healthRoutes.get('/health', getHealth);
-
-export default healthRoutes;
+const router = Router();
+router.get('/health', asyncHandler(health));
+export default router;
