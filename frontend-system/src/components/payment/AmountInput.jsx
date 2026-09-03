@@ -1,2 +1,0 @@
-import Input from '../ui/Input.jsx'
-export default function AmountInput({ value, onChange, error }) { return <div className="amount-entry"><label htmlFor="payment-amount">Amount</label><div className="amount-entry__input"><span aria-hidden="true">₹</span><Input id="payment-amount" type="text" inputMode="decimal" autoComplete="off" placeholder="0" value={value} onChange={(event) => onChange(event.target.value)} error={error} /></div></div> }
