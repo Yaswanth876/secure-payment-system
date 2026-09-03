@@ -87,6 +87,21 @@ test('valid authorization succeeds and repeated authorization is idempotent', as
   assert.equal(repeated.body.data.alreadyProcessed, true);
 });
 
+test('authorization sends the amount selected after a mismatch', async () => {
+  const preview = await request('/api/payments/preview', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ senderUserId: 1, senderAccountId: 1, recipientId: 2, amount: 10000 })
+  });
+  const result = await request(`/api/payments/${preview.body.data.transactionId}/authorize`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ confirmation: { recipientConfirmed: true, amountConfirmed: true }, amount: 12500 })
+  });
+  assert.equal(result.body.data.amount, 12500);
+  assert.equal(result.body.data.status, 'SUCCESS');
+});
+
 test('seeded pending transaction blocks an equivalent authorization', async () => {
   const preview = await request('/api/payments/preview', {
     method: 'POST',
