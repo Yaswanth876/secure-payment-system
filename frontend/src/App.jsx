@@ -2,26 +2,26 @@ import { useEffect, useState } from 'react';
 import { authorizePayment, getPaymentStatus, getProfile, getRecipient, getRecipients, getTransaction, getTransactions, previewPayment, searchRecipients } from './api/client.js';
 import ErrorState from './components/ErrorState.jsx';
 import LoadingState from './components/LoadingState.jsx';
-import AmountConfirmation from './components/AmountConfirmation.jsx';
-import DemoAuthorization from './components/DemoAuthorization.jsx';
-import RecipientCard from './components/RecipientCard.jsx';
-import RecipientIdentityCard from './components/RecipientIdentityCard.jsx';
-import PrePaymentReceipt from './components/PrePaymentReceipt.jsx';
-import SafetyTimeline from './components/SafetyTimeline.jsx';
-import TransactionCard from './components/TransactionCard.jsx';
 import { Button } from './components/ui/button.jsx';
-import { Card } from './components/ui/card.jsx';
-import { Input } from './components/ui/input.jsx';
+import ActivityPage from './pages/ActivityPage.jsx';
+import DetailPage from './pages/DetailPage.jsx';
+import HomePage from './pages/HomePage.jsx';
+import PayPage from './pages/PayPage.jsx';
 
 const USER_ID = 1;
-const money = value => `₹${Number(value).toLocaleString('en-IN')}`;
-const statusText = { SUCCESS: 'Payment successful', FAILED: 'Payment failed', PENDING: 'Payment still processing', PROCESSING: 'Payment processing', UNKNOWN: 'Payment status unclear' };
+
+function viewFromPath(pathname) {
+  if (pathname === '/activity') return 'activity';
+  if (pathname === '/pay' || pathname.startsWith('/pay/')) return 'pay';
+  if (pathname.startsWith('/transactions/')) return 'detail';
+  return 'home';
+}
 
 function App() {
   const [profile, setProfile] = useState(null);
   const [recipients, setRecipients] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [view, setView] = useState('home');
+  const [view, setView] = useState(() => viewFromPath(window.location.pathname));
   const [flow, setFlow] = useState('recipient');
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [recipientLoading, setRecipientLoading] = useState(false);
@@ -36,6 +36,18 @@ function App() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
 
+  function navigate(path) {
+    window.history.pushState({}, '', path);
+    setView(viewFromPath(path));
+  }
+
+  async function loadDetail(transactionId) {
+    setActionLoading(true); setError('');
+    try { setDetail(await getTransaction(transactionId)); }
+    catch (requestError) { setError(requestError.message); }
+    finally { setActionLoading(false); }
+  }
+
   async function loadHome() {
     setLoading(true); setError('');
     try { const [nextProfile, nextRecipients, nextTransactions] = await Promise.all([getProfile(USER_ID), getRecipients(USER_ID), getTransactions(USER_ID)]); setProfile(nextProfile); setRecipients(nextRecipients); setTransactions(nextTransactions); }
@@ -43,6 +55,19 @@ function App() {
   }
 
   useEffect(() => { loadHome(); }, []);
+  useEffect(() => {
+    const handlePopState = () => {
+      const match = window.location.pathname.match(/^\/transactions\/([^/]+)$/);
+      setView(viewFromPath(window.location.pathname));
+      if (match) loadDetail(decodeURIComponent(match[1]));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/transactions\/([^/]+)$/);
+    if (match) loadDetail(decodeURIComponent(match[1]));
+  }, []);
   useEffect(() => {
     const timer = setTimeout(async () => {
       try { setRecipients(query.trim() ? await searchRecipients(query) : await getRecipients(USER_ID)); } catch (requestError) { setError(requestError.message); }
@@ -57,7 +82,7 @@ function App() {
     return () => clearInterval(timer);
   }, [view, flow, transaction]);
 
-  function startPayment() { setView('pay'); setFlow('recipient'); setSelectedRecipient(null); setAmount(''); setQuery(''); setPreview(null); setTransaction(null); setLockData(null); setError(''); }
+  function startPayment() { navigate('/pay'); setFlow('recipient'); setSelectedRecipient(null); setAmount(''); setQuery(''); setPreview(null); setTransaction(null); setLockData(null); setError(''); }
   async function selectRecipient(recipient) {
     setRecipientLoading(true); setRecipientError(''); setError('');
     try { setSelectedRecipient(await getRecipient(recipient.recipientId)); setFlow('amount'); }
@@ -79,48 +104,22 @@ function App() {
     catch (requestError) { if (requestError.code === 'CONTINUITY_LOCK') { setLockData({ ...requestError.data, message: requestError.message }); setFlow('locked'); } else { setError(requestError.message); setFlow('pin'); } }
     finally { setActionLoading(false); }
   }
-  async function openDetail(transactionId) { setActionLoading(true); setError(''); try { setDetail(await getTransaction(transactionId)); setView('detail'); } catch (requestError) { setError(requestError.message); } finally { setActionLoading(false); } }
+  async function openDetail(transactionId) { await loadDetail(transactionId); navigate(`/transactions/${transactionId}`); }
   async function refreshStatus() { if (!transaction) return; setActionLoading(true); try { setTransaction(await getPaymentStatus(transaction.transactionId)); } catch (requestError) { setError(requestError.message); } finally { setActionLoading(false); } }
 
   if (loading && !profile) return <div className="app-loading"><LoadingState label="Loading Mirage Layer" /></div>;
   if (error && !profile) return <div className="app-loading"><ErrorState message={error} onRetry={loadHome} /></div>;
 
   return <div className="app-shell">
-    <header className="topbar"><Button variant="unstyled" className="brand" onClick={() => { setView('home'); loadHome(); }}>Mirage Layer</Button></header>
+    <header className="topbar"><Button variant="unstyled" className="brand" onClick={() => { navigate('/'); loadHome(); }}>Mirage Layer</Button></header>
     <main className="main-content">
-      {view === 'home' && <Home profile={profile} transactions={transactions} onPay={startPayment} onActivity={() => setView('activity')} onOpen={openDetail} />}
-      {view === 'activity' && <Activity transactions={transactions} onBack={() => setView('home')} onOpen={openDetail} />}
-      {view === 'detail' && <Detail detail={detail} loading={actionLoading} onBack={() => setView('activity')} />}
-      {view === 'pay' && <PayFlow flow={flow} profile={profile} recipients={recipients} query={query} setQuery={setQuery} selectedRecipient={selectedRecipient} recipientLoading={recipientLoading} recipientError={recipientError} amount={amount} setAmount={setAmount} preview={preview} transaction={transaction} lockData={lockData} error={error} loading={actionLoading} onSelect={selectRecipient} onAmount={makePreview} onConfirm={confirmPayment} onSend={() => setFlow('amount-confirmation')} onBack={() => flow === 'recipient' ? setView('home') : setFlow(flow === 'result' || flow === 'locked' ? 'recipient' : flow === 'review' || flow === 'review-confirmed' ? 'amount' : flow === 'amount-confirmation' ? 'review' : flow === 'pin' ? 'amount-confirmation' : 'recipient')} onDone={() => transaction?.status === 'FAILED' ? startPayment() : (setView('home'), loadHome())} onViewPrevious={() => lockData?.existingTransactionId && openDetail(lockData.existingTransactionId)} onRefresh={refreshStatus} />}
+      {view === 'home' && <HomePage profile={profile} transactions={transactions} onPay={startPayment} onActivity={() => navigate('/activity')} onOpen={openDetail} />}
+      {view === 'activity' && <ActivityPage transactions={transactions} onBack={() => navigate('/')} onOpen={openDetail} />}
+      {view === 'detail' && <DetailPage detail={detail} loading={actionLoading} onBack={() => navigate('/activity')} />}
+      {view === 'pay' && <PayPage flow={flow} recipients={recipients} query={query} setQuery={setQuery} selectedRecipient={selectedRecipient} recipientLoading={recipientLoading} recipientError={recipientError} amount={amount} setAmount={setAmount} preview={preview} transaction={transaction} lockData={lockData} error={error} loading={actionLoading} onSelect={selectRecipient} onAmount={makePreview} onConfirm={confirmPayment} onSend={() => setFlow('amount-confirmation')} onBack={() => flow === 'recipient' ? navigate('/') : setFlow(flow === 'result' || flow === 'locked' ? 'recipient' : flow === 'review' || flow === 'review-confirmed' ? 'amount' : flow === 'amount-confirmation' ? 'review' : flow === 'pin' ? 'amount-confirmation' : 'recipient')} onDone={() => transaction?.status === 'FAILED' ? startPayment() : (navigate('/'), loadHome())} onViewPrevious={() => lockData?.existingTransactionId && openDetail(lockData.existingTransactionId)} onRefresh={refreshStatus} />}
     </main>
-    <nav className="bottom-nav" aria-label="Primary navigation"><Button variant="unstyled" className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}><span>⌂</span>Home</Button><Button variant="unstyled" className={view === 'activity' ? 'active' : ''} onClick={() => setView('activity')}><span>≡</span>Activity</Button><Button variant="unstyled" className={view === 'pay' ? 'active' : ''} onClick={startPayment}><span>＋</span>Pay</Button></nav>
+    <nav className="bottom-nav" aria-label="Primary navigation"><Button variant="unstyled" className={view === 'home' ? 'active' : ''} onClick={() => { navigate('/'); loadHome(); }}><span>⌂</span>Home</Button><Button variant="unstyled" className={view === 'activity' ? 'active' : ''} onClick={() => navigate('/activity')}><span>≡</span>Activity</Button><Button variant="unstyled" className={view === 'pay' ? 'active' : ''} onClick={startPayment}><span>＋</span>Pay</Button></nav>
   </div>;
 }
-
-function Home({ profile, transactions, onPay, onActivity, onOpen }) { return <section className="page reveal"><div className="eyebrow">Payment safety, made clear</div><h1>Good evening,<br /><em>{profile.name}</em></h1><Card className="hero-action"><div><span className="eyebrow">Ready when you are</span><h2>Make a payment</h2><p>Review who, how much, and where it comes from.</p></div><Button onClick={onPay}>Pay <span>→</span></Button></Card><div className="section-heading"><div><span className="eyebrow">Your latest payments</span><h2>Recent activity</h2></div><Button variant="link" onClick={onActivity}>See all <span>→</span></Button></div>{transactions.slice(0, 3).map(transaction => <TransactionCard key={transaction.transactionId} transaction={transaction} onClick={() => onOpen(transaction.transactionId)} />)}</section>; }
-
-function Activity({ transactions, onBack, onOpen }) { return <section className="page reveal"><PageHeader title="Activity" onBack={onBack} /><p className="page-intro">A clear record of your payment status.</p><div className="activity-list">{transactions.map(transaction => <TransactionCard key={transaction.transactionId} transaction={transaction} onClick={() => onOpen(transaction.transactionId)} />)}</div></section>; }
-
-function Detail({ detail, loading, onBack }) { if (loading || !detail) return <section className="page"><LoadingState label="Loading payment details" /></section>; return <section className="page reveal"><PageHeader title="Payment detail" onBack={onBack} /><div className="detail-amount">{money(detail.amount.rupees)}<span>{statusText[detail.status] || detail.status}</span></div><div className="info-block"><span className="eyebrow">Paid to</span><h2>{detail.recipient.name}</h2><p>{detail.recipient.upiId}</p><p>{detail.recipient.bankName} {detail.recipient.maskedAccountNumber}</p></div><div className="detail-grid"><Info label="From" value={`${detail.sender.name} · ${detail.sender.bankName}`} /><Info label="Transaction ID" value={detail.transactionId} /><Info label="Safety status" value={detail.safetyStatus} /><Info label="Updated" value={new Date(detail.updatedAt).toLocaleString()} /></div><div className="section-heading compact"><h2>Safety timeline</h2></div><SafetyTimeline events={detail.events} /></section>; }
-function Info({ label, value }) { return <div className="info-cell"><span className="eyebrow">{label}</span><strong>{value}</strong></div>; }
-function PageHeader({ title, onBack }) { return <div className="page-header"><Button variant="ghost" className="back-button" onClick={onBack} aria-label="Go back">←</Button><h1>{title}</h1></div>; }
-
-function PayFlow({ flow, profile, recipients, query, setQuery, selectedRecipient, recipientLoading, recipientError, amount, setAmount, preview, transaction, lockData, error, loading, onSelect, onAmount, onConfirm, onSend, onBack, onDone, onViewPrevious, onRefresh }) {
-  if (flow === 'recipient') return <section className="page reveal"><PageHeader title="Pay" onBack={onBack} /><p className="page-intro">Choose who you are paying.</p><label className="search-box"><span>⌕</span><Input value={query} onChange={event => setQuery(event.target.value)} placeholder="Name or UPI ID" aria-label="Search recipients" /></label>{error && <ErrorState message={error} />}{recipients.map(recipient => <RecipientCard key={recipient.recipientId} recipient={recipient} onClick={() => onSelect(recipient)} />)}</section>;
-  if (recipientLoading) return <section className="page reveal"><PageHeader title="Recipient" onBack={onBack} /><LoadingState label="Loading recipient details" /></section>;
-  if (recipientError) return <section className="page reveal"><PageHeader title="Recipient" onBack={onBack} /><ErrorState message={recipientError} /><Button className="wide" onClick={onBack}>Back to recipients</Button></section>;
-  if (flow === 'amount') return <section className="page reveal"><PageHeader title="Amount" onBack={onBack} /><RecipientIdentityCard recipient={selectedRecipient} /><label className="amount-field"><span>₹</span><Input autoFocus inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-label="Amount in rupees" /></label><p className="field-note">Enter the whole amount in rupees.</p>{error && <ErrorState message={error} />}{loading ? <LoadingState label="Preparing review" /> : <Button className="wide" onClick={onAmount}>Review payment <span>→</span></Button>}</section>;
-  if (flow === 'review') return <PrePaymentReceipt preview={preview} loading={loading} error={error} onBack={onBack} onContinue={onSend} onViewPrevious={onViewPrevious} />;
-  if (flow === 'amount-confirmation') return <AmountConfirmation preview={preview} loading={loading} error={error} onBack={onBack} onConfirm={onConfirm} />;
-  if (flow === 'pin') return <DemoAuthorization preview={preview} loading={loading} error={error} onBack={onBack} onAuthorize={onConfirm} />;
-  if (flow === 'processing') return <StatusScreen status="PROCESSING" transaction={transaction || preview} loading={loading} onRefresh={onRefresh} />;
-  if (flow === 'locked') return <LockScreen lockData={lockData} preview={preview} onBack={onBack} onViewPrevious={onViewPrevious} />;
-  return <StatusScreen status={transaction?.status} transaction={transaction} onDone={onDone} onRefresh={onRefresh} />;
-}
-
-function Review({ preview, loading, error, onBack, onSend }) { const safety = preview.safety; return <section className="page reveal"><PageHeader title="Payment receipt" onBack={onBack} /><p className="page-intro">Review this pre-receipt before sending.</p><div className="receipt"><div className="receipt-section"><span className="eyebrow">Who</span><div className="receipt-person"><span className="avatar">{preview.recipient.photo ? <img src={preview.recipient.photo} alt={`${preview.recipient.name}, the person you're paying`} /> : preview.recipient.name.slice(0, 1)}</span><div><h2>{preview.recipient.name}</h2><p>{preview.recipient.upiId}</p><p>{preview.recipient.bankName} {preview.recipient.maskedAccountNumber}</p></div></div></div><div className="receipt-section amount-receipt"><span className="eyebrow">How much</span><strong>{money(preview.amount.rupees)}</strong></div><div className="receipt-section"><span className="eyebrow">From</span><h3>{preview.sender.name}</h3><p>{preview.sender.bankName} {preview.sender.maskedAccountNumber}</p></div></div>{safety.isNewRecipient && <Notice title="New recipient">Please carefully verify the recipient details.</Notice>}{safety.amountWarning && <Notice title="Amount check">{safety.amountWarning.message}</Notice>}{safety.continuityLock && <Notice title="Payment protection">A previous payment with the same details is unresolved.</Notice>}{error && <ErrorState message={error} />}{loading ? <LoadingState label="Preparing payment" /> : <Button className="wide" onClick={onSend}>Send payment <span>→</span></Button>}</section>; }
-function Notice({ title, children }) { return <div className="notice"><span className="notice-icon">!</span><div><strong>{title}</strong><p>{children}</p></div></div>; }
-function StatusScreen({ status, transaction, onDone, onRefresh }) { const unresolved = ['PROCESSING', 'PENDING', 'UNKNOWN'].includes(status); const failed = status === 'FAILED'; return <section className="page centered reveal"><div className={`status-glyph ${unresolved ? 'ring' : ''}`}>{status === 'SUCCESS' ? '✓' : status === 'FAILED' ? '×' : '?'}</div><span className="eyebrow">{status}</span><h1>{statusText[status] || 'Payment processing'}</h1>{transaction && <><div className="result-amount">{money(transaction.amount.rupees)}</div><h2>{transaction.recipient?.name}</h2><p>{transaction.recipient?.upiId}</p></>}{unresolved ? <div className="do-not-pay"><strong>DON'T PAY AGAIN</strong><p>{status === 'UNKNOWN' ? 'UNKNOWN does not mean failed. Wait until the final status is known.' : 'Your previous payment has not been resolved yet.'}</p>{onRefresh && <Button variant="outline" onClick={onRefresh}>Check status</Button>}</div> : failed ? <p>The payment was not completed.</p> : status === 'SUCCESS' ? <p>Transaction confirmed.</p> : null}{status === 'SUCCESS' || failed ? <Button className="wide" onClick={onDone}>{failed ? 'Try again' : 'Done'} <span>→</span></Button> : null}</section>; }
-function LockScreen({ lockData, preview, onBack, onViewPrevious }) { return <section className="page centered lock-screen reveal"><div className="lock-icon">⌕</div><span className="eyebrow">Duplicate payment protection</span><h1>Payment protected</h1><p className="page-intro">You already have a payment being processed for this recipient.</p><div className="lock-summary"><strong>{money(preview.amount.rupees)}</strong><h2>{preview.recipient.name}</h2><p>{preview.recipient.upiId}</p><div className="lock-status"><span>Previous payment</span><strong>{lockData?.existingStatus || 'UNRESOLVED'}</strong></div></div><div className="do-not-pay"><strong>DON'T PAY TWICE</strong><p>Your previous payment has not been resolved yet.</p></div><Button variant="outline" className="wide" onClick={onViewPrevious}>View previous payment</Button><Button variant="link" onClick={onBack}>Cancel</Button></section>; }
 
 export default App;
