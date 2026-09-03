@@ -1,4 +1,5 @@
 export { default as AmountGuard } from './AmountGuard.jsx'
+export { default as AmountConfirmation } from './AmountConfirmation.jsx'
 export { default as AmountInput } from './AmountInput.jsx'
 export { default as CoolingOff } from './CoolingOff.jsx'
 export { default as PaymentIntentSummary } from './PaymentIntentSummary.jsx'

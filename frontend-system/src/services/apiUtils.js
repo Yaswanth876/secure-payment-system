@@ -4,7 +4,7 @@ export class ApiError extends Error {
 
 export function normalizeRecipient(data) {
   if (!data) return null
-  return { id: data.id ?? data.recipientId, name: data.name ?? data.receiver_name, photo: data.photo, upiId: data.upiId ?? data.upi_id, bankName: data.bankName ?? data.bank_name, maskedAccount: data.maskedAccount ?? data.masked_account, isNewRecipient: Boolean(data.isNewRecipient ?? data.is_new_recipient) }
+  return { id: data.id ?? data.recipientId, name: data.name ?? data.receiver_name, photo: data.photo, upiId: data.upiId ?? data.upi_id, bankName: data.bankName ?? data.bank_name, maskedAccount: data.maskedAccount ?? data.masked_account, isNewRecipient: Boolean(data.isNewRecipient ?? data.is_new_recipient), previousPaymentAmount: data.previousPaymentAmount ?? data.previous_payment_amount }
 }
 
 export function normalizePayment(data) {
