@@ -3,6 +3,7 @@ import { authorizePayment, getPaymentStatus, getProfile, getRecipient, getRecipi
 import ErrorState from './components/ErrorState.jsx';
 import LoadingState from './components/LoadingState.jsx';
 import AmountConfirmation from './components/AmountConfirmation.jsx';
+import DemoAuthorization from './components/DemoAuthorization.jsx';
 import RecipientCard from './components/RecipientCard.jsx';
 import RecipientIdentityCard from './components/RecipientIdentityCard.jsx';
 import PrePaymentReceipt from './components/PrePaymentReceipt.jsx';
@@ -70,11 +71,12 @@ function App() {
     try { const nextPreview = await previewPayment({ senderUserId: USER_ID, senderAccountId: profile.accounts[0].id, recipientId: selectedRecipient.recipientId, amount: rupees * 100 }); setPreview(nextPreview); setFlow('review'); }
     catch (requestError) { setError(requestError.message); } finally { setActionLoading(false); }
   }
-  async function confirmPayment(nextAmount = amount) {
+  async function confirmPayment() {
     if (actionLoading || !preview) return;
+    if (flow === 'amount-confirmation') { setError(''); setFlow('pin'); return; }
     setActionLoading(true); setFlow('processing'); setError('');
-    try { await authorizePayment(preview.transactionId, { confirmation: { recipientConfirmed: true, amountConfirmed: true }, amount: Number(nextAmount) * 100 }); setTransaction(await getPaymentStatus(preview.transactionId)); setFlow('result'); }
-    catch (requestError) { if (requestError.code === 'CONTINUITY_LOCK') { setLockData({ ...requestError.data, message: requestError.message }); setFlow('locked'); } else { setError(requestError.message); setFlow('review'); } }
+    try { await authorizePayment(preview.transactionId, { confirmation: { recipientConfirmed: true, amountConfirmed: true } }); setTransaction(await getPaymentStatus(preview.transactionId)); setFlow('result'); }
+    catch (requestError) { if (requestError.code === 'CONTINUITY_LOCK') { setLockData({ ...requestError.data, message: requestError.message }); setFlow('locked'); } else { setError(requestError.message); setFlow('pin'); } }
     finally { setActionLoading(false); }
   }
   async function openDetail(transactionId) { setActionLoading(true); setError(''); try { setDetail(await getTransaction(transactionId)); setView('detail'); } catch (requestError) { setError(requestError.message); } finally { setActionLoading(false); } }
@@ -89,7 +91,7 @@ function App() {
       {view === 'home' && <Home profile={profile} transactions={transactions} onPay={startPayment} onActivity={() => setView('activity')} onOpen={openDetail} />}
       {view === 'activity' && <Activity transactions={transactions} onBack={() => setView('home')} onOpen={openDetail} />}
       {view === 'detail' && <Detail detail={detail} loading={actionLoading} onBack={() => setView('activity')} />}
-      {view === 'pay' && <PayFlow flow={flow} profile={profile} recipients={recipients} query={query} setQuery={setQuery} selectedRecipient={selectedRecipient} recipientLoading={recipientLoading} recipientError={recipientError} amount={amount} setAmount={setAmount} preview={preview} transaction={transaction} lockData={lockData} error={error} loading={actionLoading} onSelect={selectRecipient} onAmount={makePreview} onConfirm={confirmPayment} onSend={() => setFlow('amount-confirmation')} onBack={() => flow === 'recipient' ? setView('home') : setFlow(flow === 'result' || flow === 'locked' ? 'recipient' : flow === 'review' || flow === 'review-confirmed' ? 'amount' : flow === 'amount-confirmation' ? 'review' : 'recipient')} onDone={() => transaction?.status === 'FAILED' ? startPayment() : (setView('home'), loadHome())} onViewPrevious={() => lockData?.existingTransactionId && openDetail(lockData.existingTransactionId)} onRefresh={refreshStatus} />}
+      {view === 'pay' && <PayFlow flow={flow} profile={profile} recipients={recipients} query={query} setQuery={setQuery} selectedRecipient={selectedRecipient} recipientLoading={recipientLoading} recipientError={recipientError} amount={amount} setAmount={setAmount} preview={preview} transaction={transaction} lockData={lockData} error={error} loading={actionLoading} onSelect={selectRecipient} onAmount={makePreview} onConfirm={confirmPayment} onSend={() => setFlow('amount-confirmation')} onBack={() => flow === 'recipient' ? setView('home') : setFlow(flow === 'result' || flow === 'locked' ? 'recipient' : flow === 'review' || flow === 'review-confirmed' ? 'amount' : flow === 'amount-confirmation' ? 'review' : flow === 'pin' ? 'amount-confirmation' : 'recipient')} onDone={() => transaction?.status === 'FAILED' ? startPayment() : (setView('home'), loadHome())} onViewPrevious={() => lockData?.existingTransactionId && openDetail(lockData.existingTransactionId)} onRefresh={refreshStatus} />}
     </main>
     <nav className="bottom-nav" aria-label="Primary navigation"><button className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}><span>⌂</span>Home</button><button className={view === 'activity' ? 'active' : ''} onClick={() => setView('activity')}><span>≡</span>Activity</button><button className="nav-pay" onClick={startPayment}><span>＋</span>Pay</button></nav>
   </div>;
@@ -110,6 +112,7 @@ function PayFlow({ flow, profile, recipients, query, setQuery, selectedRecipient
   if (flow === 'amount') return <section className="page reveal"><PageHeader title="Amount" onBack={onBack} /><RecipientIdentityCard recipient={selectedRecipient} /><label className="amount-field"><span>₹</span><Input autoFocus inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0" aria-label="Amount in rupees" /></label><p className="field-note">Enter the whole amount in rupees.</p>{error && <ErrorState message={error} />}{loading ? <LoadingState label="Preparing review" /> : <Button className="wide" onClick={onAmount}>Review payment <span>→</span></Button>}</section>;
   if (flow === 'review') return <PrePaymentReceipt preview={preview} loading={loading} error={error} onBack={onBack} onContinue={onSend} onViewPrevious={onViewPrevious} />;
   if (flow === 'amount-confirmation') return <AmountConfirmation preview={preview} loading={loading} error={error} onBack={onBack} onConfirm={onConfirm} />;
+  if (flow === 'pin') return <DemoAuthorization preview={preview} loading={loading} error={error} onBack={onBack} onAuthorize={onConfirm} />;
   if (flow === 'processing') return <StatusScreen status="PROCESSING" transaction={transaction || preview} loading={loading} onRefresh={onRefresh} />;
   if (flow === 'locked') return <LockScreen lockData={lockData} preview={preview} onBack={onBack} onViewPrevious={onViewPrevious} />;
   return <StatusScreen status={transaction?.status} transaction={transaction} onDone={onDone} onRefresh={onRefresh} />;

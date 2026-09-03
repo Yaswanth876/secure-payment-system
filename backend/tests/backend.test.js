@@ -104,7 +104,7 @@ test('valid authorization succeeds and repeated authorization is idempotent', as
   assert.equal(repeated.body.data.alreadyProcessed, true);
 });
 
-test('authorization sends the amount selected after a mismatch', async () => {
+test('authorization keeps the previewed amount when a client supplies a different amount', async () => {
   const preview = await request('/api/payments/preview', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -115,7 +115,7 @@ test('authorization sends the amount selected after a mismatch', async () => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ confirmation: { recipientConfirmed: true, amountConfirmed: true }, amount: 12500 })
   });
-  assert.equal(result.body.data.amount, 12500);
+  assert.equal(result.body.data.amount, 10000);
   assert.equal(result.body.data.status, 'SUCCESS');
 });
 

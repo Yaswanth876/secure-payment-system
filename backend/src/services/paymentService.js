@@ -51,16 +51,12 @@ export async function previewPayment(database, input) {
   return receipt(transaction, safety);
 }
 
-export async function authorizePayment(database, transactionId, confirmation, requestedAmount) {
+export async function authorizePayment(database, transactionId, confirmation) {
   let transaction = await findTransaction(database, transactionId);
   if (transaction.status !== 'CREATED') return { ...transaction, alreadyProcessed: true };
   if (confirmation?.recipientConfirmed !== true || confirmation?.amountConfirmed !== true) throw badRequest('INVALID_CONFIRMATION', 'Explicit recipient and amount confirmation are required.');
-  if (requestedAmount !== undefined) {
-    const amount = Number(requestedAmount);
-    if (!Number.isSafeInteger(amount) || amount <= 0) throw badRequest('INVALID_AMOUNT', 'amount must be a positive integer in paise.');
-    await run(database, 'UPDATE transactions SET amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [amount, transactionId]);
-    transaction = { ...transaction, amount };
-  }
+  // The preview fixes the transaction amount. A later acknowledgement must
+  // never be able to alter it, even if a client supplies an amount field.
   const safety = await evaluateTransaction(database, transaction);
   if (safety.continuityLock) {
     await run(database, 'UPDATE transactions SET safety_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', ['LOCKED', transactionId]);

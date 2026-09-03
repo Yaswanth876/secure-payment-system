@@ -17,9 +17,11 @@ export default function AmountConfirmation({ preview, loading, error, onBack, on
     onConfirm(originalAmount);
   }
 
-  function chooseAmount(nextAmount) {
-    onConfirm(Number(nextAmount));
-  }
+  if (mismatch) return <section className="page reveal amount-confirmation-page">
+    <div className="page-header"><button className="back-button" onClick={onBack} aria-label="Back to payment receipt">Back</button><h1>Amount mismatch</h1></div>
+    <div className="amount-mismatch" role="alert"><span className="eyebrow">Payment blocked</span><h2>Please enter the correct amount</h2><p>The payment amount is <strong>₹{originalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>. You entered <strong>₹{Number(enteredAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>.</p><p>Return to the amount confirmation screen and enter the exact payment amount. This entry cannot change the payment amount.</p></div>
+    <button className="primary-button wide" onClick={() => setMismatch(false)}>Try again</button>
+  </section>;
 
   return <section className="page reveal amount-confirmation-page">
     <div className="page-header"><button className="back-button" onClick={onBack} aria-label="Back to payment receipt">←</button><h1>Confirm amount</h1></div>
@@ -28,7 +30,6 @@ export default function AmountConfirmation({ preview, loading, error, onBack, on
     <label className="amount-field amount-confirmation-field"><span>₹</span><input autoFocus inputMode="numeric" type="number" min="1" step="1" value={enteredAmount} onChange={event => { setEnteredAmount(event.target.value); setMismatch(false); }} placeholder="0" aria-label="Enter amount again in rupees" /></label>
     <p className="field-note">Enter the amount you want to send to {preview.recipient.name}.</p>
     {error && <p className="inline-error" role="alert">{error}</p>}
-    {mismatch && <div className="amount-mismatch" role="alert"><span className="eyebrow">Amounts do not match</span><h2>Which amount do you want to pay?</h2><p>Check both amounts carefully before choosing.</p><div className="amount-mismatch-values"><button type="button" onClick={() => chooseAmount(originalAmount)}><span>Receipt amount</span><strong>{money(originalAmount)}</strong></button><button type="button" onClick={() => chooseAmount(enteredAmount)}><span>Amount entered again</span><strong>{money(enteredAmount)}</strong></button></div></div>}
     {loading ? <div className="inline-loading"><span className="spinner" /> Preparing payment</div> : <button className="primary-button wide" onClick={checkAmount}>Check amount <span>→</span></button>}
   </section>;
 }
