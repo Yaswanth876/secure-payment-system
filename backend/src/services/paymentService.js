@@ -13,7 +13,7 @@ function receipt(transaction, safety) {
     recipient: { id: transaction.recipientId, name: transaction.recipientName, upiId: transaction.recipientUpiId, bankName: transaction.recipientBankName, maskedAccountNumber: transaction.recipientMaskedAccountNumber, photo: transaction.recipientPhoto },
     amount: { paise: transaction.amount, rupees: transaction.amount / 100 },
     sender: { id: transaction.senderUserId, name: transaction.senderName, upiId: transaction.senderUpiId, bankName: transaction.senderBankName, maskedAccountNumber: transaction.senderMaskedAccountNumber },
-    safety: { status: safety.status, isNewRecipient: safety.isNewRecipient, amountWarning: safety.amountWarning, continuityLock: Boolean(safety.continuityLock || safety.successfulDuplicate), requiresCoolingOff: safety.requiresCoolingOff }
+    safety: { status: safety.status, isNewRecipient: safety.isNewRecipient, amountWarning: safety.amountWarning, continuityLock: Boolean(safety.continuityLock), previousSuccessfulPayment: safety.successfulDuplicate, requiresCoolingOff: safety.requiresCoolingOff }
   };
 }
 
@@ -56,11 +56,10 @@ export async function authorizePayment(database, transactionId, confirmation) {
   if (transaction.status !== 'CREATED') return { ...transaction, alreadyProcessed: true };
   if (confirmation?.recipientConfirmed !== true || confirmation?.amountConfirmed !== true) throw badRequest('INVALID_CONFIRMATION', 'Explicit recipient and amount confirmation are required.');
   const safety = await evaluateTransaction(database, transaction);
-  const blockingMatch = safety.continuityLock || safety.successfulDuplicate;
-  if (blockingMatch) {
+  if (safety.continuityLock) {
     await run(database, 'UPDATE transactions SET safety_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', ['LOCKED', transactionId]);
-    await recordSafety(database, transactionId, 'CONTINUITY_LOCK', 'A matching payment must be resolved before another payment is authorized.', { existingTransactionId: blockingMatch.id, existingStatus: blockingMatch.status, amount: transaction.amount, recipientId: transaction.recipientId });
-    throw new AppError(409, 'CONTINUITY_LOCK', safety.continuityLock ? 'A previous payment with the same recipient and amount is still unresolved.' : 'A previous payment with the same recipient and amount was successful.', { existingTransactionId: blockingMatch.id, existingStatus: blockingMatch.status, canRetry: false });
+    await recordSafety(database, transactionId, 'CONTINUITY_LOCK', 'A matching payment must be resolved before another payment is authorized.', { existingTransactionId: safety.continuityLock.id, existingStatus: safety.continuityLock.status, amount: transaction.amount, recipientId: transaction.recipientId });
+    throw new AppError(409, 'CONTINUITY_LOCK', 'A previous payment with the same recipient and amount is still unresolved.', { existingTransactionId: safety.continuityLock.id, existingStatus: safety.continuityLock.status, canRetry: false });
   }
   await recordSafety(database, transactionId, 'USER_CONFIRMED', 'The user confirmed the recipient and amount.');
   await transition(database, transactionId, 'CREATED', 'AUTHORIZED');
@@ -77,6 +76,8 @@ export async function getTransaction(database, transactionId, userId = null) {
 }
 
 export async function listTransactions(database, userId, filters) {
+  const users = await all(database, 'SELECT id FROM users WHERE id = ?', [userId]);
+  if (!users[0]) throw notFound('USER_NOT_FOUND', 'User was not found.');
   const values = [userId];
   const conditions = ['t.sender_user_id = ?'];
   if (filters.status) { conditions.push('t.status = ?'); values.push(filters.status); }

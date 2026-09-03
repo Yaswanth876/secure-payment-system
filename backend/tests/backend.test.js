@@ -51,6 +51,23 @@ test('preview returns paise, rupees and deterministic amount warning', async () 
   assert.equal(result.body.data.safety.amountWarning.type, 'LARGE_INCREASE');
 });
 
+test('a previously successful amount remains an explicit confirmation warning, not a lock', async () => {
+  const preview = await request('/api/payments/preview', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ senderUserId: 1, senderAccountId: 1, recipientId: 1, amount: 50000 })
+  });
+  assert.equal(preview.body.data.safety.continuityLock, false);
+  assert.equal(preview.body.data.safety.previousSuccessfulPayment.id, 'TXN-HISTORY-001');
+  const result = await request(`/api/payments/${preview.body.data.transactionId}/authorize`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ confirmation: { recipientConfirmed: true, amountConfirmed: true } })
+  });
+  assert.equal(result.body.success, true);
+  assert.equal(result.body.data.status, 'SUCCESS');
+});
+
 test('new recipient and invalid confirmation are enforced', async () => {
   const created = await request('/api/recipients', {
     method: 'POST',

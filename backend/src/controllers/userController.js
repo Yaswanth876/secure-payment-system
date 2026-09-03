@@ -12,6 +12,8 @@ export async function getUser(request, response) {
 
 export async function getAccounts(request, response) {
   const userId = id(request.params.userId, 'userId');
+  const users = await all(request.app.locals.database, 'SELECT id FROM users WHERE id = ?', [userId]);
+  if (!users[0]) throw notFound('USER_NOT_FOUND', 'User was not found.');
   const rows = await all(request.app.locals.database, 'SELECT id, bank_name AS bankName, account_type AS accountType, masked_account_number AS maskedAccountNumber FROM accounts WHERE user_id = ? ORDER BY id', [userId]);
   return success(response, rows);
 }

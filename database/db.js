@@ -117,6 +117,11 @@ async function testDatabase() {
   const history = await all(database, "SELECT amount FROM transactions WHERE sender_user_id = 1 AND recipient_id = 1 AND status = 'SUCCESS' ORDER BY created_at");
   if (history.length !== 2 || history[0].amount !== 50000 || history[1].amount !== 75000) throw new Error('Amount history query failed');
 
+  await run(database, "DELETE FROM safety_events WHERE transaction_id LIKE 'TEST-%'");
+  await run(database, "DELETE FROM transactions WHERE id LIKE 'TEST-%'");
+  await run(database, "DELETE FROM trusted_contacts WHERE phone = '+910000000001'");
+  await run(database, "DELETE FROM accounts WHERE masked_account_number = '••••0001'");
+  await run(database, "DELETE FROM users WHERE upi_id = 'test@upi'");
   await close(database);
   console.log('Database tests passed.');
 }
